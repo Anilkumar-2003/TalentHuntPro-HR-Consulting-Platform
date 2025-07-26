@@ -1,0 +1,270 @@
+# MongoDB Queries for TalentHuntPro
+
+## Database: talenthuntpro
+## Collections: users, candidates, job_roles, applications
+
+## 1. Users Collection Queries
+
+### Create User (Registration)
+```javascript
+db.users.insertOne({
+  name: "John Doe",
+  email: "john@example.com",
+  password: "hashed_password_here",
+  role: "hr", // or "guest"
+  created_at: new Date()
+})
+```
+
+### Find User by Email (Login)
+```javascript
+db.users.findOne({ email: "john@example.com" })
+```
+
+### Find User by ID
+```javascript
+db.users.findOne({ _id: ObjectId("user_id_here") })
+```
+
+## 2. Candidates Collection Queries
+
+### Insert Sample Candidates
+```javascript
+db.candidates.insertMany([
+  {
+    name: "Elena Rodriguez",
+    role: "Senior React Developer",
+    location: "New York, USA",
+    experience: 7,
+    skills: ["React", "TypeScript", "Redux", "Node.js", "GraphQL"],
+    salary: 130000,
+    availability: "immediate",
+    rating: 4.8,
+    image: "https://images.pexels.com/photos/3760856/pexels-photo-3760856.jpeg?auto=compress&cs=tinysrgb&w=150",
+    created_at: new Date(),
+    created_by: ObjectId("hr_user_id")
+  },
+  {
+    name: "Michael Chen",
+    role: "UI/UX Designer",
+    location: "San Francisco, USA",
+    experience: 5,
+    skills: ["Figma", "Adobe XD", "User Research", "Prototyping", "Design Systems"],
+    salary: 110000,
+    availability: "1-month",
+    rating: 4.6,
+    image: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=150",
+    created_at: new Date(),
+    created_by: ObjectId("hr_user_id")
+  },
+  {
+    name: "Priya Sharma",
+    role: "Product Manager",
+    location: "London, UK",
+    experience: 6,
+    skills: ["Agile", "Product Strategy", "User Stories", "A/B Testing", "Analytics"],
+    salary: 120000,
+    availability: "2-month",
+    rating: 4.7,
+    image: "https://images.pexels.com/photos/3772711/pexels-photo-3772711.jpeg?auto=compress&cs=tinysrgb&w=150",
+    created_at: new Date(),
+    created_by: ObjectId("hr_user_id")
+  }
+])
+```
+
+### Get All Candidates
+```javascript
+db.candidates.find({})
+```
+
+### Get Candidate by ID
+```javascript
+db.candidates.findOne({ _id: ObjectId("candidate_id_here") })
+```
+
+### Search Candidates by Skills
+```javascript
+db.candidates.find({ skills: { $in: ["React", "JavaScript"] } })
+```
+
+### Filter Candidates by Experience Range
+```javascript
+db.candidates.find({ experience: { $gte: 3, $lte: 7 } })
+```
+
+## 3. Job Roles Collection Queries
+
+### Insert Sample Job Roles
+```javascript
+db.job_roles.insertMany([
+  {
+    title: "Senior Frontend Developer",
+    department: "Engineering",
+    location: "Remote (US)",
+    experience: "5-7 years",
+    salary_min: 120000,
+    salary_max: 150000,
+    salary_currency: "$",
+    skills: ["React", "TypeScript", "Redux", "CSS-in-JS", "Jest"],
+    openings: 3,
+    applicants: 47,
+    created_at: new Date()
+  },
+  {
+    title: "Product Designer",
+    department: "Design",
+    location: "New York, USA",
+    experience: "3-5 years",
+    salary_min: 95000,
+    salary_max: 125000,
+    salary_currency: "$",
+    skills: ["UI Design", "UX Research", "Figma", "Design Systems", "Prototyping"],
+    openings: 1,
+    applicants: 38,
+    created_at: new Date()
+  },
+  {
+    title: "Data Scientist",
+    department: "Analytics",
+    location: "London, UK",
+    experience: "4-6 years",
+    salary_min: 85000,
+    salary_max: 110000,
+    salary_currency: "£",
+    skills: ["Python", "SQL", "Machine Learning", "Data Visualization", "Statistics"],
+    openings: 2,
+    applicants: 29,
+    created_at: new Date()
+  }
+])
+```
+
+### Get All Job Roles
+```javascript
+db.job_roles.find({})
+```
+
+### Get Job Role by ID
+```javascript
+db.job_roles.findOne({ _id: ObjectId("job_role_id_here") })
+```
+
+### Filter Job Roles by Department
+```javascript
+db.job_roles.find({ department: "Engineering" })
+```
+
+## 4. Applications Collection Queries
+
+### Insert Sample Applications
+```javascript
+db.applications.insertMany([
+  {
+    candidate_id: ObjectId("candidate_id_1"),
+    job_role_id: ObjectId("job_role_id_1"),
+    status: "pending",
+    applied_date: new Date()
+  },
+  {
+    candidate_id: ObjectId("candidate_id_2"),
+    job_role_id: ObjectId("job_role_id_1"),
+    status: "accepted",
+    applied_date: new Date(Date.now() - 86400000) // 1 day ago
+  }
+])
+```
+
+### Get Applications for a Job Role
+```javascript
+db.applications.find({ job_role_id: ObjectId("job_role_id_here") })
+```
+
+### Get Applications by Candidate
+```javascript
+db.applications.find({ candidate_id: ObjectId("candidate_id_here") })
+```
+
+## 5. Aggregation Queries
+
+### Get Job Role with Application Details
+```javascript
+db.job_roles.aggregate([
+  { $match: { _id: ObjectId("job_role_id_here") } },
+  {
+    $lookup: {
+      from: "applications",
+      localField: "_id",
+      foreignField: "job_role_id",
+      as: "applications"
+    }
+  },
+  {
+    $lookup: {
+      from: "candidates",
+      localField: "applications.candidate_id",
+      foreignField: "_id",
+      as: "candidates"
+    }
+  }
+])
+```
+
+### Count Candidates by Role
+```javascript
+db.candidates.aggregate([
+  { $group: { _id: "$role", count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+])
+```
+
+### Average Salary by Department
+```javascript
+db.job_roles.aggregate([
+  {
+    $group: {
+      _id: "$department",
+      avg_min_salary: { $avg: "$salary_min" },
+      avg_max_salary: { $avg: "$salary_max" }
+    }
+  }
+])
+```
+
+## 6. Index Creation (for better performance)
+
+### Create indexes for better query performance
+```javascript
+// Users collection indexes
+db.users.createIndex({ email: 1 }, { unique: true })
+
+// Candidates collection indexes
+db.candidates.createIndex({ role: 1 })
+db.candidates.createIndex({ skills: 1 })
+db.candidates.createIndex({ experience: 1 })
+db.candidates.createIndex({ location: 1 })
+
+// Job roles collection indexes
+db.job_roles.createIndex({ department: 1 })
+db.job_roles.createIndex({ skills: 1 })
+
+// Applications collection indexes
+db.applications.createIndex({ candidate_id: 1 })
+db.applications.createIndex({ job_role_id: 1 })
+db.applications.createIndex({ status: 1 })
+```
+
+## 7. Data Cleanup Queries
+
+### Remove all data (use with caution)
+```javascript
+db.users.deleteMany({})
+db.candidates.deleteMany({})
+db.job_roles.deleteMany({})
+db.applications.deleteMany({})
+```
+
+### Remove specific user type
+```javascript
+db.users.deleteMany({ role: "guest" })
+```
